@@ -1,29 +1,25 @@
-from telegram.ext import CommandHandler, Filters, MessageHandler, Updater
+from telegram.ext import Application, CommandHandler, MessageHandler, filters
 
 from helpers import notify, process_input, report_exception, write_pid
-from tkn import GROUP_ID, TOKEN
+from userinfo import GROUP_ID, TOKEN
 
 
-def start(update, context):
-    notify(process_input(update), GROUP_ID)
-    update.message.reply_text("Ложа, градусъ?")
+async def start(update, context):
+    await notify(process_input(update), GROUP_ID)
+    await context.bot.send_message(update.message.chat_id, "Ложа, градусъ?")
 
 
-def send_feedback(update, context):
-    notify(process_input(update), GROUP_ID)
-    update.message.reply_text('Ευχαριστώ!')
+async def send_feedback(update, context):
+    await notify(process_input(update), GROUP_ID)
+    await context.bot.send_message(update.message.chat_id, 'Ευχαριστώ!')
 
 
 @report_exception
 def main():
-    updater = Updater(token=TOKEN, use_context=True)
-    dispatcher = updater.dispatcher
-
-    dispatcher.add_handler(CommandHandler('start', start))
-    dispatcher.add_handler(MessageHandler(filters=Filters.text, callback=send_feedback))
-
-    updater.start_polling()
-    updater.idle()
+    application = Application.builder().token(token=TOKEN).build()
+    application.add_handler(CommandHandler('start', start))
+    application.add_handler(MessageHandler(filters=filters.TEXT, callback=send_feedback))
+    application.run_polling()
 
 
 if __name__ == '__main__':

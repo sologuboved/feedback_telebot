@@ -1,13 +1,16 @@
+import asyncio
 from functools import partial, wraps
 import logging
 import os
 import re
 import sys
-from telegram import Bot, ParseMode
-from telegram.error import BadRequest
 import traceback
 
-from tkn import TOKEN, GROUP_ID
+from telegram import Bot
+from telegram.constants import ParseMode
+from telegram.error import BadRequest
+
+from userinfo import TOKEN, GROUP_ID
 
 
 def process_input(update):
@@ -23,21 +26,22 @@ last name: {update.effective_user.last_name}
     """
 
 
-def notify(notification, chat_id):
+async def notify(notification, chat_id):
     print(notification)
     notification = f"[<b>Augustblue Feedback</b>]\n{notification}"
-    sender = Bot(token=TOKEN)
-    try:
-        sender.send_message(
-            chat_id=chat_id,
-            text=notification,
-            parse_mode=ParseMode.HTML,
-        )
-    except BadRequest:
-        sender.send_message(
-            chat_id=chat_id,
-            text=notification,
-        )
+    bot = Bot(token=TOKEN)
+    async with bot:
+        try:
+            await bot.send_message(
+                chat_id=chat_id,
+                text=notification,
+                parse_mode=ParseMode.HTML,
+            )
+        except BadRequest:
+            await bot.send_message(
+                chat_id=chat_id,
+                text=notification,
+            )
 
 
 def report_exception(func=None, raise_exception=True):
@@ -49,10 +53,10 @@ def report_exception(func=None, raise_exception=True):
         try:
             return func(*args, **kwargs)
         except Exception as e:
-            notify(
+            asyncio.run(notify(
                 f"({func.__name__}, called with {args}, {kwargs}) {type(e).__name__}: {e}",
                 GROUP_ID,
-            )
+            ))
             if raise_exception:
                 raise e
             else:
